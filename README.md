@@ -111,8 +111,4 @@ The system can be configured through:
 
 Copyright © 2024 AGIS Defence System. All rights reserved.
 
-## Support
 
-- Website: https://agis-defence.com/support
-- Email: support@agis-defence.com
-- Documentation: https://docs.agis-defence.com
