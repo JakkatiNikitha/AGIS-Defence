@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGIS Defence Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        .loading {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .fade-enter {
+            opacity: 0;
+        }
+        .fade-enter-active {
+            opacity: 1;
+            transition: opacity 300ms ease-in;
+        }
+        .fade-exit {
+            opacity: 1;
+        }
+        .fade-exit-active {
+            opacity: 0;
+            transition: opacity 300ms ease-in;
+        }
+        .metric-value {
+            transition: all 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div id="root"></div>
+    </div>
+    
+    <!-- Error Boundary Component -->
+    <script type="text/babel">
+        class ErrorBoundary extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { hasError: false };
+            }
+
+            static getDerivedStateFromError(error) {
+                return { hasError: true };
+            }
+
+            componentDidCatch(error, errorInfo) {
+                console.error('Error caught by boundary:', error, errorInfo);
+            }
+
+            render() {
+                if (this.state.hasError) {
+                    return (
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                            <strong className="font-bold">Something went wrong!</strong>
+                            <span className="block sm:inline"> Please refresh the page.</span>
+                        </div>
+                    );
+                }
+                return this.props.children;
+            }
+        }
+    </script>
+
+    <!-- Load and render the dashboard -->
+    <script type="text/babel" src="/js/dashboard.js"></script>
+</body>
+</html> 

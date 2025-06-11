@@ -1,0 +1,30 @@
+@echo off
+echo Installing AGIS Defence System...
+echo.
+
+REM Create installation directory
+set INSTALL_DIR=%USERPROFILE%\AGIS Defence
+mkdir "%INSTALL_DIR%"
+
+REM Create virtual environment
+python -m venv "%INSTALL_DIR%\venv"
+
+REM Activate virtual environment and install dependencies
+call "%INSTALL_DIR%\venv\Scripts\activate.bat"
+pip install flask==3.0.0 werkzeug==3.0.1 tensorflow==2.15.0 numpy==1.24.3 psutil==5.9.5 requests==2.31.0 scapy==2.5.0
+
+REM Copy application files
+xcopy /E /I "..\agis_defence" "%INSTALL_DIR%\agis_defence"
+
+REM Create desktop shortcut
+echo @echo off > "%USERPROFILE%\Desktop\AGIS Defence.bat"
+echo cd "%INSTALL_DIR%" >> "%USERPROFILE%\Desktop\AGIS Defence.bat"
+echo call venv\Scripts\activate.bat >> "%USERPROFILE%\Desktop\AGIS Defence.bat"
+echo python -m agis_defence >> "%USERPROFILE%\Desktop\AGIS Defence.bat"
+
+echo.
+echo Installation complete!
+echo AGIS Defence System has been installed to: %INSTALL_DIR%
+echo You can start the application using the desktop shortcut.
+echo.
+pause 

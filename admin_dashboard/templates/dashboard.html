@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGIS Defence - Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <span class="text-2xl font-bold text-blue-600">AGIS Defence</span>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <span class="text-gray-700 mr-4">Welcome, {{ current_user.username }}</span>
+                    <a href="{{ url_for('logout') }}" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                        Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-blue-500 rounded-md p-3">
+                            <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Active Users</dt>
+                                <dd class="text-lg font-medium text-gray-900" id="activeUsers">0</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-red-500 rounded-md p-3">
+                            <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Threats Blocked</dt>
+                                <dd class="text-lg font-medium text-gray-900" id="threatsBlocked">0</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-green-500 rounded-md p-3">
+                            <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">System Health</dt>
+                                <dd class="text-lg font-medium text-gray-900" id="systemHealth">Good</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-yellow-500 rounded-md p-3">
+                            <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">AI Status</dt>
+                                <dd class="text-lg font-medium text-gray-900" id="aiStatus">Active</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Health Panel -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <!-- System Info -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">System Information</h3>
+                    <div class="space-y-3" id="systemInfo">
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Platform:</span>
+                            <span class="font-medium" id="platformInfo">Loading...</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Processor:</span>
+                            <span class="font-medium" id="processorInfo">Loading...</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Architecture:</span>
+                            <span class="font-medium" id="architectureInfo">Loading...</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Hostname:</span>
+                            <span class="font-medium" id="hostnameInfo">Loading...</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">IP Address:</span>
+                            <span class="font-medium" id="ipAddressInfo">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Network Activity -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Network Activity</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <canvas id="networkChart"></canvas>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold" id="networkIn">0 B/s</div>
+                                <div class="text-sm text-gray-500">Network In</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold" id="networkOut">0 B/s</div>
+                                <div class="text-sm text-gray-500">Network Out</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Threats and Monitoring -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <!-- Active Threats -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Active Threats</h3>
+                        <span class="px-2 py-1 text-xs font-medium rounded-full" id="threatCount">
+                            0 Active
+                        </span>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="overflow-y-auto max-h-64">
+                            <ul class="divide-y divide-gray-200" id="activeThreats">
+                                <!-- Threats will be added here -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Events -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Security Events</h3>
+                    <div class="overflow-y-auto max-h-64">
+                        <ul class="divide-y divide-gray-200" id="securityEvents">
+                            <!-- Security events will be added here -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <!-- CPU Usage -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">CPU Usage</h3>
+                    <div class="relative pt-1">
+                        <div class="flex mb-2 items-center justify-between">
+                            <div>
+                                <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full" id="cpuLabel">
+                                    0%
+                                </span>
+                            </div>
+                        </div>
+                        <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-200">
+                            <div id="cpuBar" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500" style="width: 0%"></div>
+                        </div>
+                        <canvas id="cpuChart" class="mt-4"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Memory Usage -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Memory Usage</h3>
+                    <div class="relative pt-1">
+                        <div class="flex mb-2 items-center justify-between">
+                            <div>
+                                <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full" id="memoryLabel">
+                                    0%
+                                </span>
+                            </div>
+                        </div>
+                        <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-200">
+                            <div id="memoryBar" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-500" style="width: 0%"></div>
+                        </div>
+                        <canvas id="memoryChart" class="mt-4"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Disk Usage -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Disk Usage</h3>
+                    <div class="relative pt-1">
+                        <div class="flex mb-2 items-center justify-between">
+                            <div>
+                                <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full" id="diskLabel">
+                                    0%
+                                </span>
+                            </div>
+                        </div>
+                        <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-200">
+                            <div id="diskBar" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-yellow-500" style="width: 0%"></div>
+                        </div>
+                        <canvas id="diskChart" class="mt-4"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Recent Threats -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Recent Threats</h3>
+                    <div class="mt-4">
+                        <div class="flow-root">
+                            <ul class="divide-y divide-gray-200" id="recentThreats">
+                                <!-- Threats will be dynamically added here -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Metrics -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">System Metrics</h3>
+                    <div class="mt-4">
+                        <canvas id="metricsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Management -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">User Management</h3>
+                        <button onclick="showCreateUserModal()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                            Add User
+                        </button>
+                    </div>
+                    <div class="mt-4">
+                        <div class="flow-root">
+                            <ul class="divide-y divide-gray-200" id="userList">
+                                <!-- Users will be dynamically added here -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Logs -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">System Logs</h3>
+                    <div class="mt-4">
+                        <div class="flow-root">
+                            <ul class="divide-y divide-gray-200" id="systemLogs">
+                                <!-- Logs will be dynamically added here -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create User Modal -->
+    <div id="createUserModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white modal-content">
+            <div class="mt-3">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Create New User</h3>
+                    <button onclick="hideCreateUserModal()" class="text-gray-400 hover:text-gray-500">
+                        <span class="sr-only">Close</span>
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <form id="createUserForm" class="space-y-4">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+                        <input type="text" name="name" id="name" required 
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                        <input type="email" name="email" id="email" required 
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="license_type" class="block text-sm font-medium text-gray-700">License Type</label>
+                        <select name="license_type" id="license_type" required 
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="trial">Trial (30 days)</option>
+                            <option value="basic">Basic (1 year)</option>
+                            <option value="premium">Premium (1 year)</option>
+                            <option value="enterprise">Enterprise (2 years)</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-end space-x-3 mt-4">
+                        <button type="button" onclick="hideCreateUserModal()" 
+                                class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded">
+                            Cancel
+                        </button>
+                        <button type="submit" 
+                                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                            Create User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div id="editUserModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white modal-content">
+            <div class="mt-3">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Edit User</h3>
+                    <button onclick="hideEditUserModal()" class="text-gray-400 hover:text-gray-500">
+                        <span class="sr-only">Close</span>
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <form id="editUserForm" class="space-y-4">
+                    <input type="hidden" name="user_id">
+                    <div>
+                        <label for="edit_name" class="block text-sm font-medium text-gray-700">Name</label>
+                        <input type="text" name="name" id="edit_name" required 
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="edit_email" class="block text-sm font-medium text-gray-700">Email</label>
+                        <input type="email" name="email" id="edit_email" required 
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="edit_license_type" class="block text-sm font-medium text-gray-700">License Type</label>
+                        <select name="license_type" id="edit_license_type" required 
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="trial">Trial (30 days)</option>
+                            <option value="basic">Basic (1 year)</option>
+                            <option value="premium">Premium (1 year)</option>
+                            <option value="enterprise">Enterprise (2 years)</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-end space-x-3 mt-4">
+                        <button type="button" onclick="hideEditUserModal()" 
+                                class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded">
+                            Cancel
+                        </button>
+                        <button type="submit" 
+                                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Extend License Modal -->
+    <div id="extendLicenseModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white modal-content">
+            <div class="mt-3">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Extend License</h3>
+                    <button onclick="hideExtendLicenseModal()" class="text-gray-400 hover:text-gray-500">
+                        <span class="sr-only">Close</span>
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <form id="extendLicenseForm" class="space-y-4">
+                    <input type="hidden" name="user_id">
+                    <div>
+                        <label for="duration_days" class="block text-sm font-medium text-gray-700">Duration</label>
+                        <select name="duration_days" id="duration_days" required 
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="30">30 days</option>
+                            <option value="90">90 days</option>
+                            <option value="180">180 days</option>
+                            <option value="365" selected>1 year</option>
+                            <option value="730">2 years</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-end space-x-3 mt-4">
+                        <button type="button" onclick="hideExtendLicenseModal()" 
+                                class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded">
+                            Cancel
+                        </button>
+                        <button type="submit" 
+                                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                            Extend License
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Socket.IO
+        const socket = io();
+
+        // Connect to WebSocket
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        // Update stats
+        socket.on('stats_update', (data) => {
+            document.getElementById('activeUsers').textContent = data.activeUsers;
+            document.getElementById('threatsBlocked').textContent = data.threatsBlocked;
+            document.getElementById('systemHealth').textContent = data.systemHealth;
+            document.getElementById('aiStatus').textContent = data.aiStatus;
+        });
+
+        // Update threats list
+        socket.on('new_threat', (threat) => {
+            const threatsList = document.getElementById('recentThreats');
+            const threatItem = document.createElement('li');
+            threatItem.className = 'py-4';
+            threatItem.innerHTML = `
+                <div class="flex space-x-3">
+                    <div class="flex-1 space-y-1">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-sm font-medium">${threat.type}</h3>
+                            <p class="text-sm text-gray-500">${threat.timestamp}</p>
+                        </div>
+                        <p class="text-sm text-gray-500">${threat.details}</p>
+                    </div>
+                </div>
+            `;
+            threatsList.insertBefore(threatItem, threatsList.firstChild);
+        });
+
+        // Initialize metrics chart
+        const ctx = document.getElementById('metricsChart').getContext('2d');
+        const metricsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'CPU Usage',
+                    data: [],
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                }, {
+                    label: 'Memory Usage',
+                    data: [],
+                    borderColor: 'rgb(255, 99, 132)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+
+        // Update metrics chart
+        socket.on('metrics_update', (data) => {
+            const timestamp = new Date().toLocaleTimeString();
+            metricsChart.data.labels.push(timestamp);
+            metricsChart.data.datasets[0].data.push(data.cpu);
+            metricsChart.data.datasets[1].data.push(data.memory);
+
+            if (metricsChart.data.labels.length > 10) {
+                metricsChart.data.labels.shift();
+                metricsChart.data.datasets[0].data.shift();
+                metricsChart.data.datasets[1].data.shift();
+            }
+
+            metricsChart.update();
+        });
+
+        // Update user list
+        function updateUserList(users) {
+            const userList = document.getElementById('userList');
+            userList.innerHTML = '';
+            users.forEach(user => {
+                const userItem = document.createElement('li');
+                userItem.className = 'py-4';
+                userItem.innerHTML = `
+                    <div class="flex items-center space-x-4">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-900 truncate">${user.name}</p>
+                            <p class="text-sm text-gray-500 truncate">${user.email}</p>
+                        </div>
+                        <div>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                ${user.active ? 'Active' : 'Inactive'}
+                            </span>
+                        </div>
+                    </div>
+                `;
+                userList.appendChild(userItem);
+            });
+        }
+
+        // Fetch initial data
+        fetch('/api/admin/users')
+            .then(response => response.json())
+            .then(users => updateUserList(users));
+
+        // Update system logs
+        socket.on('new_log', (log) => {
+            const logsList = document.getElementById('systemLogs');
+            const logItem = document.createElement('li');
+            logItem.className = 'py-4';
+            logItem.innerHTML = `
+                <div class="flex space-x-3">
+                    <div class="flex-1 space-y-1">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-sm font-medium">${log.type}</h3>
+                            <p class="text-sm text-gray-500">${log.timestamp}</p>
+                        </div>
+                        <p class="text-sm text-gray-500">${log.message}</p>
+                    </div>
+                </div>
+            `;
+            logsList.insertBefore(logItem, logsList.firstChild);
+        });
+    </script>
+</body>
+</html> 
